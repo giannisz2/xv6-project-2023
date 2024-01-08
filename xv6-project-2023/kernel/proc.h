@@ -108,10 +108,10 @@ struct proc {
 };
 
 struct pstat {
-  int pid; // Process id
-  int ppid; // Parent process id
-  char* name; // Name of process
-  int priority; // Priority of process
-  int state; // Current status of process
-  int length; // Length of the process
+  int pid[NPROC]; // Process id
+  int ppid[NPROC]; // Parent process id
+  char* name[NPROC]; // Name of process
+  int priority[NPROC]; // Priority of process
+  int state[NPROC]; // Current status of process
+  int length[NPROC]; // Length of the process
 };
