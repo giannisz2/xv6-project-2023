@@ -492,16 +492,16 @@ void scheduler(void) {
       }
     }
 
-    if(new_proc != 0) { // if there exist processes that have higher priority
-      int counter = 0;
-      struct proc* equal_prio_procs[NPROC]; // array of processes with the same priorities
+    // if(new_proc != 0) { // if there exist processes that have higher priority
+    //   int counter = 0;
+    //   struct proc* equal_prio_procs[NPROC]; // array of processes with the same priorities
 
-      for(p = proc; p < &proc[NPROC]; p++) {
-        if(p->state == RUNNABLE && p->priority == new_proc->priority) {
-          equal_prio_procs[counter] = p;
-          counter++;
-        }
-      }
+    //   for(p = proc; p < &proc[NPROC]; p++) {
+    //     if(p->state == RUNNABLE && p->priority == new_proc->priority) {
+    //       equal_prio_procs[counter] = p;
+    //       counter++;
+    //     }
+    //   }
 
     //   if(counter == 1) { // there is no other process other that itself that has the same priority
     //     p = new_proc;
@@ -523,7 +523,7 @@ void scheduler(void) {
     //       break;
     //     }
     //   }
-    }
+    //}
 
     p = new_proc;
     p->state = RUNNING; // change process' state to running
@@ -531,6 +531,7 @@ void scheduler(void) {
     swtch(&c->context, &p->context); // switch to the new process
     c->proc = 0; // Process is done running for now
     release(&p->lock);
+    intr_off();
   }
 }
 
