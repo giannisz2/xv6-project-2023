@@ -110,6 +110,7 @@ static struct proc*
 allocproc(void)
 {
   struct proc *p;
+  p->priority = 10;
 
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
@@ -472,53 +473,65 @@ wait(uint64 addr)
 // }
 
 void scheduler(void) {
-  struct proc *p;
-  struct proc *new_p;
+  struct proc* p;
   struct cpu *c = mycpu();
-  
-  c->proc = 0;
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
-    intr_on();
 
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-    
-      int min = 21;
-      for(struct proc* i = proc + 1; i < &proc[NPROC]; i++) { // Check every other process for their priority
-        if(min > proc->priority) {
-          min = proc->priority;
-          new_p = proc;
-          break;
+  while(1) {
+    intr_on();
+    acquire(&p->lock);
+
+    int highest_prio = 21;
+    struct proc* new_proc = 0;
+
+    for(p = proc; p < &proc[NPROC]; p++) { // find the priority with the highest priority
+      if(p->state == RUNNABLE) {
+        if(p->priority < highest_prio) {
+          highest_prio = p->priority;
+          new_proc = p;
+        }
+      }
+    }
+
+    if(new_proc != 0) { // if there exist processes that have higher priority
+      int counter = 0;
+      struct proc* equal_prio_procs[NPROC]; // array of processes with the same priorities
+
+      for(p = proc; p < &proc[NPROC]; p++) {
+        if(p->state == RUNNABLE && p->priority == new_proc->priority) {
+          equal_prio_procs[counter] = p;
+          counter++;
         }
       }
 
-      int counter = 0;
-      for(struct proc* i = proc + 1; i < &proc[NPROC]; i++) { // Check how many other processes have the same priority
-        if(min == proc->priority)
-          counter++;
-      }
-
-      struct proc* p_equal_processes[counter];
-      int index = 0; // Index of p_equal_processes array
-      for(struct proc* i = proc + 1; i < &proc[NPROC]; i++) { // Check how many other processes have the same priority and add them to the array
-        if(min == proc->priority)
-          p_equal_processes[index] = i;
-      }
-      // Switch to chosen process.  It is the process's job
-      // to release its lock and then reacquire it
-      // before jumping back to us.
-      new_p->state = RUNNING;
-      c->proc = new_p;
-      swtch(&c->context, &new_p->context);
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
+    //   if(counter == 1) { // there is no other process other that itself that has the same priority
+    //     p = new_proc;
+    //     p->state = RUNNING; // change process' state to running
+    //     c->proc = p; // added on the CPU
+    //     swtch(&c->context, &p->context); // switch to the new process
+    //     c->proc = 0; // Process is done running for now
+    //   }
+    //   else { // use round robin
+    //     for(int i = 0; i < counter - 1; i++) {
+    //       // if(i != 0) // since its round robin all those processes have to be executed so we use the lock system each time, however if i == 0 then the lock is already acquired from line 480
+    //       //   acquire(&p->lock);
+    //       p = equal_prio_procs[i];
+    //       p->state = RUNNING; // change process' state to running
+    //       c->proc = p; // added on the CPU
+    //       swtch(&c->context, &p->context); // switch to the new process
+    //       c->proc = 0; // Process is done running for now
+    //       //release(&p->lock);
+    //       break;
+    //     }
+    //   }
     }
+
+    p = new_proc;
+    p->state = RUNNING; // change process' state to running
+    c->proc = p; // added on the CPU
+    swtch(&c->context, &p->context); // switch to the new process
+    c->proc = 0; // Process is done running for now
     release(&p->lock);
   }
-  
 }
 
 // Switch to scheduler.  Must hold only p->lock
