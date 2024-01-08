@@ -1,7 +1,7 @@
 #include "user.h"
 #include "syscall.h"
 #include "kernel/proc.h"
-#include "param.h"
+#include "kernel/param.h"
 
 
 int main(void) {
