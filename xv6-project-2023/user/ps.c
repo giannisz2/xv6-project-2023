@@ -6,19 +6,20 @@
 
 int main(void) {
     struct proc* proc;
-    struct pstat* pinfo;
-    
-    for(struct proc* i = proc; i < &proc[NPROC]; i++) { // For every possible process running on the system
-        if(getpinfo(pinfo) == -1) { // Error checking
+    struct pstat* pinfo = malloc(sizeof(struct pstat)); // initialize struct pstat
+    if(getpinfo(pinfo) == -1) { // Error checking
             printf("Failure.\n");
-            return -1;
-        }
-        if(pinfo->state != RUNNING) // If process isn't active
-            continue; 
-            
-        printf("The info for process %d are \n Name: %s \n PID: %d \n PPID: %d \n Priority %d \n State %d \n Length: %ld ", 
-        i, pinfo->name, pinfo->pid, pinfo->ppid, pinfo->priority, pinfo->state, pinfo->length);
+            return -1; 
     }
+
+    printf("Name\tPID\t\tPPID\tPriority\tState\tLength");
+    for(int i = 0; i < NPROC; i++) {
+        if(pinfo->pid[i] == 0)
+            continue;
+        printf("%s\t%d\t%d\t%d\t%d\t%ld", pinfo->name[i], pinfo->pid[i], pinfo->ppid[i], pinfo->priority[i], pinfo->state[i], pinfo->length[i]);
+        printf("\n");
+    }
+    
     
     return 0;
 }
