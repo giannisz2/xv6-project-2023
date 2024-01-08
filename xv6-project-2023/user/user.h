@@ -1,3 +1,6 @@
+#include "kernel/types.h"
+
+
 struct stat;
 struct pstat;
 
