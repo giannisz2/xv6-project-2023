@@ -110,11 +110,11 @@ static struct proc*
 allocproc(void)
 {
   struct proc *p;
-  p->priority = 10;
 
   for(p = proc; p < &proc[NPROC]; p++) {
     acquire(&p->lock);
     if(p->state == UNUSED) {
+      p->priority = 10; // added default priority if p is unused
       goto found;
     } else {
       release(&p->lock);
