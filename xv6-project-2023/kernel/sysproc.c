@@ -91,41 +91,43 @@ sys_uptime(void)
 }
 
 // Sets priority of current process to num
-int setpriority(int num) {
-  struct proc* p;
-
-  if(p == 0) // Error checking
+uint64 sys_setpriority(void) {
+  int num; 
+  argint(0, &num);
+  if(num < 1 || num > 20) { // Failure
+    printf("Error in sys_getpriority.\n");
     return -1;
- 
-  if(num < 1 || num > 20) { // Check for valid numbers
-    printf("Priority number invalid. Setting 10 as default.\n");
-    p->priority = 10;
-    return -1; 
   }
+  struct proc* p = myproc();
+  acquire(&p->lock);
   p->priority = num;
-  printf("The process %s has priority %d", p->name, p->priority);
-  return 0;
+  release(&p->lock);
+
+  return 0; // Success
 }
 
 // Gets info of process
-int getpinfo(struct pstat* pstat) {
-  printf("Copying data..\n");
-  struct proc* p;
-  if(p == 0 || pstat) // Error checking
+uint64 sys_getpinfo(void) {
+  struct pstat* pstat;
+  struct proc* p = myproc();
+  argaddr(0, (void*)&pstat);
+  struct pstat* temp;
+  if(copyout(p->pagetable, (uint64)&pstat, (char*)&temp, sizeof(temp)) < 1) {
+    printf("Error in sys_getpinfo.\n");
     return -1;
-  
+  }
   // Locks exist so another process wont run while this on is being copied
   acquire(&p->lock);
-  for(int i = 0; i < NPROC; i++) {
-    if(p == RUNNING) { // If process is active
+  int i = 0;
+  for(p = proc; p < &proc[NPROC]; p++) {
+    if(p->state == RUNNING) { // If process is active
       strncpy(pstat->name[i], p->name, sizeof(p->name));
       pstat->pid[i] = p->pid;
       pstat->ppid[i] = p->parent->pid;
       pstat->priority[i] = p->priority;
       pstat->state[i] = p->state;
       pstat->length[i] = p->sz;
-    } else {
-      pstat->pid[i] = 0; // IF process isn't active place the number 0 as a pid as an indication 
+    i++;
     }
   }
   release(&p->lock);
