@@ -112,7 +112,7 @@ uint64 sys_getpinfo(void) {
   struct proc* p = myproc();
   argaddr(0, (void*)&pstat);
   struct pstat* temp;
-  if(copyout(p->pagetable, (uint64)&pstat, (char*)&temp, sizeof(temp)) < 1) {
+  if(copyout(p->pagetable, (uint64)&pstat, (char*)&temp, sizeof(temp)) == -1) {
     printf("Error in sys_getpinfo.\n");
     return -1;
   }
