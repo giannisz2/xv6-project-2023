@@ -1,25 +1,22 @@
 #include "user.h"
-#include "syscall.h"
-#include "kernel/proc.h"
-#include "kernel/param.h"
+#include "kernel/types.h"
+#include "kernel/pstat.h"
+#include "kernel/stat.h"
+
 
 int main(void) {
-    struct proc* proc;
-    struct pstat* pinfo = malloc(sizeof(struct pstat)); // initialize struct pstat
+    struct pstat* pstat = malloc(sizeof(struct pstat));
 
-    if(getpinfo(pinfo) == -1) { // Error checking
-            printf("Failure.\n");
-            return -1; 
+    if(getpinfo(pstat) < 0) {
+        printf("Failure in ps file.\n");
+        return -1;
     }
-
     printf("Name\tPID\t\tPPID\tPriority\tState\tLength");
     for(int i = 0; i < NPROC; i++) {
-        if(pinfo->pid[i] == 0)
+        if(pstat->pid[i] == 0) {
             continue;
-        printf("%s\t%d\t%d\t%d\t%d\t%ld", pinfo->name[i], pinfo->pid[i], pinfo->ppid[i], pinfo->priority[i], pinfo->state[i], pinfo->length[i]);
-        printf("\n");
+        }
+        printf("%s\t%d\t%d\t%d\t%d\t%d", pstat->name[i], pstat->pid[i], pstat->ppid[i], pstat->priority[i], pstat->state[i], pstat->length[i]);
     }
-    
-    free(pinfo);
     return 0;
 }
