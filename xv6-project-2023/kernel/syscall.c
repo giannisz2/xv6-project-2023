@@ -101,8 +101,8 @@ extern uint64 sys_unlink(void);
 extern uint64 sys_link(void);
 extern uint64 sys_mkdir(void);
 extern uint64 sys_close(void);
-extern int setpriority(int);
-extern int getpinfo(struct pstat*);
+extern uint64 sys_setpriority(void);
+extern uint64 sys_getpinfo(void);
 
 // An array mapping syscall numbers from syscall.h
 // to the function that handles the system call.
@@ -128,8 +128,8 @@ static uint64 (*syscalls[])(void) = {
 [SYS_link]    sys_link,
 [SYS_mkdir]   sys_mkdir,
 [SYS_close]   sys_close,
-[SYS_setpriority]    setpriority,
-[SYS_getpinfo] getpinfo
+[SYS_setpriority]    sys_setpriority,
+[SYS_getpinfo] sys_getpinfo,
 };
 
 void
@@ -149,3 +149,4 @@ syscall(void)
     p->trapframe->a0 = -1;
   }
 }
+
