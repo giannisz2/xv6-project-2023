@@ -28,6 +28,7 @@ struct cpu {
 
 extern struct cpu cpus[NCPU];
 
+
 // per-process data for the trap handling code in trampoline.S.
 // sits in a page by itself just under the trampoline page in the
 // user page table. not specially mapped in the kernel page table.
@@ -107,10 +108,12 @@ struct proc {
   int priority; // Priority added
 };
 
+extern struct proc proc[NPROC];
+
 struct pstat {
   int pid[NPROC]; // Process id
   int ppid[NPROC]; // Parent process id
-  char* name[NPROC]; // Name of process
+  char* name[NPROC][20]; // Name of process assuming 20 is the max length of characters for a process
   int priority[NPROC]; // Priority of process
   int state[NPROC]; // Current status of process
   int length[NPROC]; // Length of the process
