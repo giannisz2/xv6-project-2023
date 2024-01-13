@@ -11,11 +11,6 @@ int main(void) {
         printf("Failure in ps file.\n");
         return -1;
     }
-
-    if(printpinfo(pstat) < 0) {
-        printf("Failure in ps file.\n");
-        return -1;
-    }
-    
+    printpinfo(pstat);
     return 0;
 }
