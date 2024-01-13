@@ -475,62 +475,81 @@ scheduler(void)
 // void scheduler(void) {
 //   struct proc* p;
 //   struct cpu *c = mycpu();
-
+//   struct pstat* pstat=(struct pstat*)kalloc();
+//   c->proc=0;
 //   while(1) {
 //     intr_on();
-//     acquire(&p->lock);
 
 //     int highest_prio = 21;
-//     struct proc* new_proc = 0;
-
+//     struct proc* new_proc = (struct proc*) kalloc();
+//     int pos;
+//     int i=0;
+//     int flag=0;
+//     // new_proc=proc;
 //     for(p = proc; p < &proc[NPROC]; p++) { // find the priority with the highest priority
+//       acquire(&p->lock);
 //       if(p->state == RUNNABLE) {
+//         // printf("%d  \n",p->priority);
 //         if(p->priority < highest_prio) {
 //           highest_prio = p->priority;
-//           new_proc = p;
+//           // new_proc = p;
+//           pos=i;
+//           flag=1;
+//         }
+//       }
+//       release(&p->lock);
+//       i++;
+//     }
+//     p=&proc[pos];
+//     if(flag){
+//       acquire(&p->lock);
+//       p->state = RUNNING; // change process' state to running
+//       c->proc = p; // added on the CPU
+//       swtch(&c->context, &p->context); // switch to the new process
+//       c->proc = 0; // Process is done running for now
+
+//       release(&p->lock);
+//     }
+
+//     if(new_proc != 0) { // if there exist processes that have higher priority
+//       int counter = 0;
+//       struct proc* equal_prio_procs[NPROC]; // array of processes with the same priorities
+
+//       for(p = proc; p < &proc[NPROC]; p++) {
+//         if(p->state == RUNNABLE && p->priority == new_proc->priority) {
+//           equal_prio_procs[counter] = p;
+//           counter++;
+//         }
+//       }
+
+//       if(counter == 1) { // there is no other process other that itself that has the same priority
+//         p = new_proc;
+//         p->state = RUNNING; // change process' state to running
+//         c->proc = p; // added on the CPU
+//         swtch(&c->context, &p->context); // switch to the new process
+//         c->proc = 0; // Process is done running for now
+//       }
+//       else { // use round robin
+//         for(int i = 0; i < counter - 1; i++) {
+//           // if(i != 0) // since its round robin all those processes have to be executed so we use the lock system each time, however if i == 0 then the lock is already acquired from line 480
+//           //   acquire(&p->lock);
+//           p = equal_prio_procs[i];
+//           p->state = RUNNING; // change process' state to running
+//           c->proc = p; // added on the CPU
+//           swtch(&c->context, &p->context); // switch to the new process
+//           c->proc = 0; // Process is done running for now
+//           //release(&p->lock);
+//           break;
 //         }
 //       }
 //     }
-
-//     // if(new_proc != 0) { // if there exist processes that have higher priority
-//     //   int counter = 0;
-//     //   struct proc* equal_prio_procs[NPROC]; // array of processes with the same priorities
-
-//     //   for(p = proc; p < &proc[NPROC]; p++) {
-//     //     if(p->state == RUNNABLE && p->priority == new_proc->priority) {
-//     //       equal_prio_procs[counter] = p;
-//     //       counter++;
-//     //     }
-//     //   }
-
-//     //   if(counter == 1) { // there is no other process other that itself that has the same priority
-//     //     p = new_proc;
-//     //     p->state = RUNNING; // change process' state to running
-//     //     c->proc = p; // added on the CPU
-//     //     swtch(&c->context, &p->context); // switch to the new process
-//     //     c->proc = 0; // Process is done running for now
-//     //   }
-//     //   else { // use round robin
-//     //     for(int i = 0; i < counter - 1; i++) {
-//     //       // if(i != 0) // since its round robin all those processes have to be executed so we use the lock system each time, however if i == 0 then the lock is already acquired from line 480
-//     //       //   acquire(&p->lock);
-//     //       p = equal_prio_procs[i];
-//     //       p->state = RUNNING; // change process' state to running
-//     //       c->proc = p; // added on the CPU
-//     //       swtch(&c->context, &p->context); // switch to the new process
-//     //       c->proc = 0; // Process is done running for now
-//     //       //release(&p->lock);
-//     //       break;
-//     //     }
-//     //   }
-//     //}
-
+//     acquire(&new_proc->lock);
 //     p = new_proc;
-//     p->state = RUNNING; // change process' state to running
-//     c->proc = p; // added on the CPU
-//     swtch(&c->context, &p->context); // switch to the new process
+//     new_proc->state = RUNNING; // change process' state to running
+//     c->proc = new_proc; // added on the CPU
+//     swtch(&c->context, &new_proc->context); // switch to the new process
 //     c->proc = 0; // Process is done running for now
-//     release(&p->lock);
+//     release(&new_proc->lock);
 //     intr_off();
 //   }
 // }
