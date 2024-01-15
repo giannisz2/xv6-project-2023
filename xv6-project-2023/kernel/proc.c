@@ -442,117 +442,77 @@ wait(uint64 addr)
 //  - swtch to start running that process.
 //  - eventually that process transfers control
 //    via swtch back to the scheduler.
-void
-scheduler(void)
-{
-  struct proc *p;
-  struct cpu *c = mycpu();
+
+// void scheduler(void) {
+//   struct proc *p;
+//   struct cpu *c = mycpu();
   
-  c->proc = 0;
-  for(;;){
-    // Avoid deadlock by ensuring that devices can interrupt.
+//   c->proc = 0;
+//   for(;;){
+//     // Avoid deadlock by ensuring that devices can interrupt.
+//     intr_on();
+
+//     for(p = proc; p < &proc[NPROC]; p++) {
+//       acquire(&p->lock);
+//       if(p->state == RUNNABLE) {
+//         // Switch to chosen process.  It is the process's job
+//         // to release its lock and then reacquire it
+//         // before jumping back to us.
+//         p->state = RUNNING;
+//         c->proc = p;
+//         swtch(&c->context, &p->context);
+
+//         // Process is done running for now.
+//         // It should have changed its p->state before coming back.
+//         c->proc = 0;
+//       }
+//       release(&p->lock);
+//     }
+//   }
+// }
+
+void scheduler(void) {
+  struct proc* p;    
+  struct cpu* c = mycpu(); 
+  c->proc = 0;   
+
+  while(1) {
+     // Enable interrupts to avoid deadlock
     intr_on();
 
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);
-      if(p->state == RUNNABLE) {
-        // Switch to chosen process.  It is the process's job
-        // to release its lock and then reacquire it
-        // before jumping back to us.
-        p->state = RUNNING;
-        c->proc = p;
-        swtch(&c->context, &p->context);
+    int highest_priority = 21;    // Initialize min
+    struct proc* new_proc = 0;     
 
-        // Process is done running for now.
-        // It should have changed its p->state before coming back.
-        c->proc = 0;
+
+    // Iterate over all processes
+    for(p = proc; p < &proc[NPROC]; p++) {
+      acquire(&p->lock);    // Acquire lock for process safety
+      if(p->state == RUNNABLE) {
+         // Find the process with the highest priority
+        if (p->priority < highest_priority ||
+            p->priority == highest_priority) {
+          new_proc = p;
+          highest_priority = p->priority;
+        }
       }
-      release(&p->lock);
+      release(&p->lock);    // Release the lock after checking
+    }
+
+
+    // If there is a process with the highest priority
+    if(new_proc != 0) {
+      acquire(&new_proc->lock);     // Acquire lock for running process
+      if(new_proc->state == RUNNABLE){
+        new_proc->state = RUNNING;    // Change state to RUNNING
+        c->proc = new_proc;    // Set this process as the current process on the CPU
+        swtch(&c->context, &new_proc->context);    // Switch context to the highest priority process
+        c->proc=0;
+
+      }
+      release(&new_proc->lock);   // Release lock after running the process
     }
   }
 }
-
-// void scheduler(void) {
-//   struct proc* p;
-//   struct cpu *c = mycpu();
-//   struct pstat* pstat=(struct pstat*)kalloc();
-//   c->proc=0;
-//   while(1) {
-//     intr_on();
-
-//     int highest_prio = 21;
-//     struct proc* new_proc = (struct proc*) kalloc();
-//     int pos;
-//     int i=0;
-//     int flag=0;
-//     // new_proc=proc;
-//     for(p = proc; p < &proc[NPROC]; p++) { // find the priority with the highest priority
-//       acquire(&p->lock);
-//       if(p->state == RUNNABLE) {
-//         // printf("%d  \n",p->priority);
-//         if(p->priority < highest_prio) {
-//           highest_prio = p->priority;
-//           // new_proc = p;
-//           pos=i;
-//           flag=1;
-//         }
-//       }
-//       release(&p->lock);
-//       i++;
-//     }
-//     p=&proc[pos];
-//     if(flag){
-//       acquire(&p->lock);
-//       p->state = RUNNING; // change process' state to running
-//       c->proc = p; // added on the CPU
-//       swtch(&c->context, &p->context); // switch to the new process
-//       c->proc = 0; // Process is done running for now
-
-//       release(&p->lock);
-//     }
-
-//     if(new_proc != 0) { // if there exist processes that have higher priority
-//       int counter = 0;
-//       struct proc* equal_prio_procs[NPROC]; // array of processes with the same priorities
-
-//       for(p = proc; p < &proc[NPROC]; p++) {
-//         if(p->state == RUNNABLE && p->priority == new_proc->priority) {
-//           equal_prio_procs[counter] = p;
-//           counter++;
-//         }
-//       }
-
-//       if(counter == 1) { // there is no other process other that itself that has the same priority
-//         p = new_proc;
-//         p->state = RUNNING; // change process' state to running
-//         c->proc = p; // added on the CPU
-//         swtch(&c->context, &p->context); // switch to the new process
-//         c->proc = 0; // Process is done running for now
-//       }
-//       else { // use round robin
-//         for(int i = 0; i < counter - 1; i++) {
-//           // if(i != 0) // since its round robin all those processes have to be executed so we use the lock system each time, however if i == 0 then the lock is already acquired from line 480
-//           //   acquire(&p->lock);
-//           p = equal_prio_procs[i];
-//           p->state = RUNNING; // change process' state to running
-//           c->proc = p; // added on the CPU
-//           swtch(&c->context, &p->context); // switch to the new process
-//           c->proc = 0; // Process is done running for now
-//           //release(&p->lock);
-//           break;
-//         }
-//       }
-//     }
-//     acquire(&new_proc->lock);
-//     p = new_proc;
-//     new_proc->state = RUNNING; // change process' state to running
-//     c->proc = new_proc; // added on the CPU
-//     swtch(&c->context, &new_proc->context); // switch to the new process
-//     c->proc = 0; // Process is done running for now
-//     release(&new_proc->lock);
-//     intr_off();
-//   }
-// }
 
 // Switch to scheduler.  Must hold only p->lock
 // and have changed proc->state. Saves and restores
@@ -561,6 +521,7 @@ scheduler(void)
 // be proc->intena and proc->noff, but that would
 // break in the few places where a lock is held but
 // there's no process.
+
 void
 sched(void)
 {
