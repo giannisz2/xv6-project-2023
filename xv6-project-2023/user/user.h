@@ -28,7 +28,6 @@ int sleep(int);
 int uptime(void);
 int setpriority(int);
 int getpinfo(struct pstat*);
-int printpinfo(struct pstat*);
 
 // ulib.c
 int stat(const char*, struct stat*);
