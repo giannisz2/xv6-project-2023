@@ -113,36 +113,31 @@ uint64 sys_getpinfo(void) {
   struct proc* p = myproc();
   argaddr(0, &pointer);
   struct pstat* pstat = kalloc();
-  //pstat = (struct pstat*)pointer;
-  int x = copyout(p->pagetable, pointer, (char*)&pstat, sizeof(pstat)) ;
-  if(x == -1) {
-    printf("Error in sys_getpinfo.\n");
-    return -1;
+  if(copyout(p->pagetable, pointer, (char*)pstat, sizeof(*pstat)) == -1) {
+      printf("Error in sys_getpinfo.\n");
+      kfree(pstat);
+      return -1;
   }
+  //pstat = (struct pstat*)pointer;
   // Locks exist so another process wont run while this on is being copied
   int i = 0;
+  printf("Name\tPID\tPPID\tPriority State\tLength\n");
   for(p = proc; p < &proc[NPROC]; p++) {
-  acquire(&p->lock);
-    if(p->state == RUNNING) { // If process is active
-      strncpy(pstat->name[i], p->name, sizeof(p->name));
-      pstat->pid[i] = p->pid;
-      pstat->ppid[i] = p->parent->pid;
-      pstat->priority[i] = p->priority;
-      pstat->state[i] = p->state;
-      pstat->length[i] = p->sz;
+    acquire(&p->lock);
+      if(p->state == RUNNING || p->state == RUNNABLE) { // If process is active
+        strncpy(pstat->name[i], p->name, sizeof(p->name));
+        pstat->pid[i] = p->pid;
+        pstat->ppid[i] = p->parent->pid;
+        pstat->priority[i] = p->priority;
+        pstat->state[i] = p->state;
+        pstat->length[i] = p->sz;
+        printf("%s\t%d\t%d\t%d\t %d\t%d\n", pstat->name[i], pstat->pid[i], pstat->ppid[i], pstat->priority[i], pstat->state[i], pstat->length[i]);
+      }
     i++;
-    }
-  release(&p->lock);
+    release(&p->lock);
+    
   }
+  
+  kfree(pstat);
   return 0;
-}
-
-uint64 sys_printpinfo(void) {
-  struct pstat* pstat = kalloc();
-  argaddr(0, (uint64)pstat);
-  pstat = (struct pstat*)pstat;
-  printf("\tName\tPID\tPPID\tPriority\tState\tLength\n");
-  for(int i = 0; i < NPROC; i++) {
-    printf("%s\t%d\t%d\t%d\t%d\t%d\n", pstat->name[i], pstat->pid[i], pstat->ppid[i], pstat->priority[i], pstat->state[i], pstat->length[i]);
-  }
 }
