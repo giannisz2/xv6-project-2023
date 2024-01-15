@@ -38,4 +38,3 @@ entry("sleep");
 entry("uptime");
 entry("setpriority");
 entry("getpinfo");
-entry("printpinfo");
