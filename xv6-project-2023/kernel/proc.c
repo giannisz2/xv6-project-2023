@@ -487,7 +487,7 @@ void scheduler(void) {
     // Iterate over all processes
     for(p = proc; p < &proc[NPROC]; p++) {
       acquire(&p->lock);    // Acquire lock for process safety
-      if(p->state == RUNNABLE) {
+      if(p->state == RUNNABLE || p->state == RUNNING) {
          // Find the process with the highest priority or the same (working like round-robin basically)
         if (p->priority <= highest_priority) {
           new_proc = p;
