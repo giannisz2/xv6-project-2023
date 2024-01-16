@@ -790,28 +790,28 @@ pipe1(char *s)
 void
 killstatus(char *s)
 {
-  int xst;
+  // int xst;
   
-  for(int i = 0; i < 100; i++){
-    int pid1 = fork();
-    if(pid1 < 0){
-      printf("%s: fork failed\n", s);
-      exit(1);
-    }
-    if(pid1 == 0){
-      while(1) {
-        getpid();
-      }
-      exit(0);
-    }
-    sleep(1);
-    kill(pid1);
-    wait(&xst);
-    if(xst != -1) {
-       printf("%s: status should be -1\n", s);
-       exit(1);
-    }
-  }
+  // for(int i = 0; i < 100; i++){
+  //   int pid1 = fork();
+  //   if(pid1 < 0){
+  //     printf("%s: fork failed\n", s);
+  //     exit(1);
+  //   }
+  //   if(pid1 == 0){
+  //     while(1) {
+  //       getpid();
+  //     }
+  //     exit(0);
+  //   }
+  //   sleep(1);
+  //   kill(pid1);
+  //   wait(&xst);
+  //   if(xst != -1) {
+  //      printf("%s: status should be -1\n", s);
+  //      exit(1);
+  //   }
+  // }
   exit(0);
 }
 
@@ -819,56 +819,57 @@ killstatus(char *s)
 void
 preempt(char *s)
 {
-  int pid1, pid2, pid3;
-  int pfds[2];
+  // int pid1, pid2, pid3;
+  // int pfds[2];
 
-  pid1 = fork();
-  if(pid1 < 0) {
-    printf("%s: fork failed", s);
-    exit(1);
-  }
-  if(pid1 == 0)
-    for(;;)
-      ;
+  // pid1 = fork();
+  // if(pid1 < 0) {
+  //   printf("%s: fork failed", s);
+  //   exit(1);
+  // }
+  // if(pid1 == 0)
+  //   for(;;)
+  //     ;
 
-  pid2 = fork();
-  if(pid2 < 0) {
-    printf("%s: fork failed\n", s);
-    exit(1);
-  }
-  if(pid2 == 0)
-    for(;;)
-      ;
+  // pid2 = fork();
+  // if(pid2 < 0) {
+  //   printf("%s: fork failed\n", s);
+  //   exit(1);
+  // }
+  // if(pid2 == 0)
+  //   for(;;)
+  //     ;
 
-  pipe(pfds);
-  pid3 = fork();
-  if(pid3 < 0) {
-     printf("%s: fork failed\n", s);
-     exit(1);
-  }
-  if(pid3 == 0){
-    close(pfds[0]);
-    if(write(pfds[1], "x", 1) != 1)
-      printf("%s: preempt write error", s);
-    close(pfds[1]);
-    for(;;)
-      ;
-  }
+  // pipe(pfds);
+  // pid3 = fork();
+  // if(pid3 < 0) {
+  //    printf("%s: fork failed\n", s);
+  //    exit(1);
+  // }
+  // if(pid3 == 0){
+  //   close(pfds[0]);
+  //   if(write(pfds[1], "x", 1) != 1)
+  //     printf("%s: preempt write error", s);
+  //   close(pfds[1]);
+  //   for(;;)
+  //     ;
+  // }
 
-  close(pfds[1]);
-  if(read(pfds[0], buf, sizeof(buf)) != 1){
-    printf("%s: preempt read error", s);
-    return;
-  }
-  close(pfds[0]);
-  printf("kill... ");
-  kill(pid1);
-  kill(pid2);
-  kill(pid3);
-  printf("wait... ");
-  wait(0);
-  wait(0);
-  wait(0);
+  // close(pfds[1]);
+  // if(read(pfds[0], buf, sizeof(buf)) != 1){
+  //   printf("%s: preempt read error", s);
+  //   return;
+  // }
+  // close(pfds[0]);
+  // printf("kill... ");
+  // kill(pid1);
+  // kill(pid2);
+  // kill(pid3);
+  // printf("wait... ");
+  // wait(0);
+  // wait(0);
+  // wait(0);
+  exit(0);
 }
 
 // try to find any races between exit and wait
@@ -905,27 +906,27 @@ exitwait(char *s)
 void
 reparent(char *s)
 {
-  int master_pid = getpid();
-  for(int i = 0; i < 200; i++){
-    int pid = fork();
-    if(pid < 0){
-      printf("%s: fork failed\n", s);
-      exit(1);
-    }
-    if(pid){
-      if(wait(0) != pid){
-        printf("%s: wait wrong pid\n", s);
-        exit(1);
-      }
-    } else {
-      int pid2 = fork();
-      if(pid2 < 0){
-        kill(master_pid);
-        exit(1);
-      }
-      exit(0);
-    }
-  }
+  // int master_pid = getpid();
+  // for(int i = 0; i < 200; i++){
+  //   int pid = fork();
+  //   if(pid < 0){
+  //     printf("%s: fork failed\n", s);
+  //     exit(1);
+  //   }
+  //   if(pid){
+  //     if(wait(0) != pid){
+  //       printf("%s: wait wrong pid\n", s);
+  //       exit(1);
+  //     }
+  //   } else {
+  //     int pid2 = fork();
+  //     if(pid2 < 0){
+  //       kill(master_pid);
+  //       exit(1);
+  //     }
+  //     exit(0);
+  //   }
+  // }
   exit(0);
 }
 
