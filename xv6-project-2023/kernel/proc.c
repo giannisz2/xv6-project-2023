@@ -472,43 +472,39 @@ wait(uint64 addr)
 // }
 
 void scheduler(void) {
-  struct proc* p;    
-  struct cpu* c = mycpu(); 
-  c->proc = 0;   
+  struct proc* process;    
+  struct cpu* cpu = mycpu(); 
+  cpu->proc = 0;   
 
   while(1) {
      // Enable interrupts to avoid deadlock
     intr_on();
 
-    int highest_priority = 21;    // Initialize min
-    struct proc* new_proc = 0;     
+    int top_priority = 21;    // Initialize min
+    struct proc* new_process = 0;     
 
-
-    // Iterate over all processes
-    for(p = proc; p < &proc[NPROC]; p++) {
-      acquire(&p->lock);    // Acquire lock for process safety
-      if(p->state == RUNNABLE || p->state == RUNNING) {
-         // Find the process with the highest priority or the same (working like round-robin basically)
-        if (p->priority <= highest_priority) {
-          new_proc = p;
-          highest_priority = p->priority;
+    for(process = proc; process < &proc[NPROC]; process++) {
+      acquire(&process->lock);    // Acquire lock to avoid race conditions
+      if(process->state == RUNNABLE || process->state == RUNNING) {
+         // Find the process with the highest priority or the same (working like round-robin if priorities are the same basically)
+        if (process->priority <= top_priority) {
+          new_process = process;
+          top_priority = process->priority;
         }
       }
-      release(&p->lock);    // Release the lock after checking
+      release(&process->lock);    // Release the lock after checking
     }
 
-
     // If there is a process with the highest priority
-    if(new_proc != 0) {
-      acquire(&new_proc->lock);     // Acquire lock for running process
-      if(new_proc->state == RUNNABLE){
-        new_proc->state = RUNNING;    // Change state to RUNNING
-        c->proc = new_proc;    // Set this process as the current process on the CPU
-        swtch(&c->context, &new_proc->context);    // Switch context to the highest priority process
-        c->proc=0;
-
+    if(new_process != 0) {
+      acquire(&new_process->lock);    
+      if(new_process->state == RUNNABLE) {
+        new_process->state = RUNNING;    
+        cpu->proc = new_process;    // Set this process as the current process on the CPU
+        swtch(&cpu->context, &new_process->context);    // Switch to the highest priority process
+        cpu->proc = 0;
       }
-      release(&new_proc->lock);   // Release lock after running the process
+      release(&new_process->lock); 
     }
   }
 }

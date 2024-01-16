@@ -95,46 +95,45 @@ sys_uptime(void)
 uint64 sys_setpriority(void) {
   int num; 
   argint(0, &num);
-  if(num < 1 || num > 20) { // Failure
-    printf("Error in sys_getpriority.\n");
-    return -1;
+  if(num < 1 || num > 20) { 
+    printf("Priority out of bounds.\n");
+    return -1; // Failure
   }
-  struct proc* p = myproc();
-  acquire(&p->lock);
-  p->priority = num;
-  release(&p->lock);
+  struct proc* process = myproc(); // Current proc struct
+  acquire(&process->lock);
+  process->priority = num;
+  release(&process->lock);
 
   return 0; // Success
 }
 
 // Gets info of process
 uint64 sys_getpinfo(void) {
+  struct proc* process = myproc(); // Current proc struct
   uint64 pointer;
-  struct proc* p = myproc();
-  argaddr(0, &pointer);
-  struct pstat* pstat = kalloc();
-  if(copyout(p->pagetable, pointer, (char*)pstat, sizeof(*pstat)) == -1) {
-      printf("Error in sys_getpinfo.\n");
+  argaddr(0, &pointer); // Retrieve argument from user
+  struct pstat* pstat = kalloc(); // Initialize pstat
+  if(copyout(process->pagetable, pointer, (char*)pstat, sizeof(*pstat)) == -1) { // Error checking
+      printf("Error copying out data in sys_getpinfo.\n");
       kfree(pstat);
       return -1;
   }
-  //pstat = (struct pstat*)pointer;
-  // Locks exist so another process wont run while this on is being copied
-  int i = 0;
+  // Locks exist so another process won't run while this on is being copied
+  int i = 0; // Counter for processes
   printf("Name\tPID\tPPID\tPriority State\tLength\n");
-  for(p = proc; p < &proc[NPROC]; p++) {
-    acquire(&p->lock);
-      if(p->state == RUNNING || p->state == RUNNABLE) { // If process is active
-        strncpy(pstat->name[i], p->name, sizeof(p->name));
-        pstat->pid[i] = p->pid;
-        pstat->ppid[i] = p->parent->pid;
-        pstat->priority[i] = p->priority;
-        pstat->state[i] = p->state;
-        pstat->length[i] = p->sz;
+  for(process = proc; process < &proc[NPROC]; process++) {
+    acquire(&process->lock);
+      if(process->state == RUNNING || process->state == RUNNABLE) { // If process is active or about to run
+        strncpy(pstat->name[i], process->name, sizeof(process->name));
+        pstat->pid[i] = process->pid;
+        pstat->ppid[i] = process->parent->pid;
+        pstat->priority[i] = process->priority;
+        pstat->state[i] = process->state;
+        pstat->length[i] = process->sz;
         printf("%s\t%d\t%d\t%d\t %d\t%d\n", pstat->name[i], pstat->pid[i], pstat->ppid[i], pstat->priority[i], pstat->state[i], pstat->length[i]);
       }
     i++;
-    release(&p->lock);
+    release(&process->lock);
     
   }
   
