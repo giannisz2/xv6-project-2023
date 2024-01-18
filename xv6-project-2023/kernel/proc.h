@@ -109,3 +109,4 @@ struct proc {
 };
 
 extern struct proc proc[NPROC];
+extern struct spinlock wait_lock;
