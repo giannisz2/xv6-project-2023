@@ -112,6 +112,7 @@ int sys_getpinfo(void) {
   struct proc* my_proc = myproc();
   struct proc* process;
   struct pstat *u_pstat;   
+  
   argaddr(0, (uint64*)&u_pstat);
   
   struct pstat k_pstat = {0}; // Initialize k_pstat
