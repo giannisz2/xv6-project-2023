@@ -111,7 +111,7 @@ uint64 sys_setpriority(void) {
 int sys_getpinfo(void) {
   struct proc* my_proc = myproc();
   struct proc* process;
-  struct pstat *u_pstat;   
+  struct pstat* u_pstat;   
   
   argaddr(0, (uint64*)&u_pstat);
   
@@ -120,18 +120,20 @@ int sys_getpinfo(void) {
   acquire(&wait_lock); // We need global lock for process table access so others CPU's won't be able to cause race conditions
   int i = 0;
   for(process = proc; process < &proc[NPROC]; process++) {
+    acquire(&process->lock);
     if(process->state != UNUSED) { 
       k_pstat.pid[i] = process->pid;
-      if(process->parent)
+      if(process->parent) // If parent exists
         k_pstat.ppid[i] = process->parent->pid;
       else 
-        k_pstat.ppid[i] = -1;
+        k_pstat.ppid[i] = 0;
       strncpy(k_pstat.name[i], process->name, sizeof(process->name));
       k_pstat.priority[i] = process->priority;
       k_pstat.state[i] = process->state;
       k_pstat.length[i] = process->sz;
     }
     i++;
+    release(&process->lock);
   }
   release(&wait_lock); 
 
