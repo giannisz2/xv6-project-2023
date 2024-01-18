@@ -815,6 +815,7 @@ killstatus(char *s)
   exit(0);
 }
 
+
 // meant to be run w/ at most two CPUs
 void
 preempt(char *s)
