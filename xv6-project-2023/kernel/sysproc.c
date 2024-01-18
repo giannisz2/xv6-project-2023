@@ -108,35 +108,37 @@ uint64 sys_setpriority(void) {
 }
 
 // Gets info of process
-uint64 sys_getpinfo(void) {
-  struct proc* process = myproc(); // Current proc struct
-  uint64 pointer;
-  argaddr(0, &pointer); // Retrieve argument from user
-  struct pstat* pstat = kalloc(); // Initialize pstat
-  if(copyout(process->pagetable, pointer, (char*)pstat, sizeof(*pstat)) == -1) { // Error checking
-      printf("Error copying out data in sys_getpinfo.\n");
-      kfree(pstat);
+int sys_getpinfo(void) {
+  struct proc* my_proc = myproc();
+  struct proc* process;
+  struct pstat *u_pstat;   
+  argaddr(0, (uint64*)&u_pstat);
+  
+  struct pstat k_pstat;
+  memset(&k_pstat, 0, sizeof(struct pstat)); // Initialize kernel_stat
+
+  acquire(&wait_lock); // We need global lock for process table access so others CPU's won't be able to cause race conditions
+  int i = 0;
+  for(process = proc; process < &proc[NPROC]; process++) {
+    if(process->state != UNUSED) { 
+      k_pstat.pid[i] = process->pid;
+      if(process->parent)
+        k_pstat.ppid[i] = process->parent->pid;
+      else 
+        k_pstat.ppid[i] = -1;
+      strncpy(k_pstat.name[i], process->name, sizeof(process->name));
+      k_pstat.priority[i] = process->priority;
+      k_pstat.state[i] = process->state;
+      k_pstat.length[i] = process->sz;
+    }
+    i++;
+  }
+  release(&wait_lock); 
+
+  // Copy kernel struct to user struct
+  if(copyout(my_proc->pagetable, (uint64)u_pstat, (char *)&k_pstat, sizeof(struct pstat)) == -1) {
       return -1;
   }
-  // Locks exist so another process won't run while this on is being copied
-  int i = 0; // Counter for processes
-  printf("Name\tPID\tPPID\tPriority State\tLength\n");
-  for(process = proc; process < &proc[NPROC]; process++) {
-    acquire(&process->lock);
-      if(process->state == RUNNING || process->state == RUNNABLE) { // If process is active or about to run
-        strncpy(pstat->name[i], process->name, sizeof(process->name));
-        pstat->pid[i] = process->pid;
-        pstat->ppid[i] = process->parent->pid;
-        pstat->priority[i] = process->priority;
-        pstat->state[i] = process->state;
-        pstat->length[i] = process->sz;
-        printf("%s\t%d\t%d\t%d\t %d\t%d\n", pstat->name[i], pstat->pid[i], pstat->ppid[i], pstat->priority[i], pstat->state[i], pstat->length[i]);
-      }
-    i++;
-    release(&process->lock);
-    
-  }
-  
-  kfree(pstat);
+
   return 0;
 }
