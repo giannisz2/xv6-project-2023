@@ -114,8 +114,7 @@ int sys_getpinfo(void) {
   struct pstat *u_pstat;   
   argaddr(0, (uint64*)&u_pstat);
   
-  struct pstat k_pstat;
-  memset(&k_pstat, 0, sizeof(struct pstat)); // Initialize kernel_stat
+  struct pstat k_pstat = {0}; // Initialize k_pstat
 
   acquire(&wait_lock); // We need global lock for process table access so others CPU's won't be able to cause race conditions
   int i = 0;
