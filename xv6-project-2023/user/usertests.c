@@ -800,6 +800,7 @@ killstatus(char *s)
   //   if(pid1 == 0){
   //     while(1) {
   //       getpid();
+  //        printf("Test");
   //     }
   //     exit(0);
   //   }
