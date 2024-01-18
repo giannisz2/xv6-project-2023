@@ -785,7 +785,6 @@ pipe1(char *s)
   }
 }
 
-
 // test if child is killed (status = -1)
 void
 killstatus(char *s)
