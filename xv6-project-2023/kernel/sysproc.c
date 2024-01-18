@@ -136,6 +136,7 @@ int sys_getpinfo(void) {
 
   // Copy kernel struct to user struct
   if(copyout(my_proc->pagetable, (uint64)u_pstat, (char *)&k_pstat, sizeof(struct pstat)) == -1) {
+      printf("Couldn't copy kernel struct to user struct.\n");
       return -1;
   }
 
