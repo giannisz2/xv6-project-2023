@@ -472,40 +472,34 @@ wait(uint64 addr)
 // }
 
 void scheduler(void) {
-  struct proc* process;    
   struct cpu* cpu = mycpu(); 
   cpu->proc = 0;   
 
   while(1) {
      // Enable interrupts to avoid deadlock
     intr_on();
+    
+    int top_priority = 21;    // Initialize min   
 
-    int top_priority = 21;    // Initialize min
-    struct proc* new_process = 0;     
-
-    for(process = proc; process < &proc[NPROC]; process++) {
-      acquire(&process->lock);    // Acquire lock to avoid race conditions
-      if(process->state == RUNNABLE || process->state == RUNNING) {
-         // Find the process with the highest priority or the same (working like round-robin if priorities are the same basically)
-        if (process->priority <= top_priority) {
-          new_process = process;
+    for(struct proc* process = proc; process < &proc[NPROC]; process++) {
+      // Find the process with the highest priority or the same (working like round-robin if priorities are the same basically)
+      if(process->priority <= top_priority) { 
+        if(process->state == RUNNABLE || process->state == RUNNING) {
           top_priority = process->priority;
         }
       }
-      release(&process->lock);    // Release the lock after checking
-    }
+    }  
 
-    // If there is a process with the highest priority
-    if(new_process != 0) {
-      acquire(&new_process->lock);    
-      if(new_process->state == RUNNABLE) {
-        new_process->state = RUNNING;    
-        cpu->proc = new_process;    // Set this process as the current process on the CPU
-        swtch(&cpu->context, &new_process->context);    // Switch to the highest priority process
+    for(struct proc* process = proc; process < &proc[NPROC]; process++) {
+      acquire(&process->lock); 
+      if(process->state == RUNNABLE && process->priority == top_priority) {
+        process->state = RUNNING;    
+        cpu->proc = process;    // Set this process as the current process on the CPU
+        swtch(&cpu->context, &process->context);    // Switch to the highest priority process
         cpu->proc = 0;
       }
-      release(&new_process->lock); 
-    }
+      release(&process->lock); 
+    }      
   }
 }
 
