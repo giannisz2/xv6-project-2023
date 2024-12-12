@@ -1,25 +1,24 @@
-# xv6-project-2023
+# operating-systems-xv6-emulator-project
 
-Ιωάννης Ζερμπίνος - 1115202000053 DOCUMENTATION 
-Αρχικά πρόσθεσα στην proc.h την μεταβλητή "int priority" στο struct proc οπου χρειάζεται για να επιστρέφει την προτεραιότητα της συγκεκριμένης διεργασίας, καθώς και την αρχικοποίηση της στο allocproc() που βρίσκεται στο proc.c. Το struct pstat που περιέχει διάφορα στοιχεία των διεργασιών έχει οριστεί στο pstat.h και αποτελείται από πίνακες μεγέθους NPROC που θα περιέχουν ταυτόχρονα όλα τα δεδομένα όλων των διεργασιών. Έπειτα πρόσθεσα στην syscall.h δύο νέους αριθμούς που αντιστοιχούν στις δύο νέες κλήσεις συστήματος, στο user.h τους αριθμούς για τις κλήσεις, και στο usys.pl τις δύο κλήσεις σαν entries.
+First I added to proc.h the variable "int priority" in the struct proc where it is needed to return the priority of the specific process, as well as initializing it in allocproc() found in proc.c. The struct pstat containing various process data is defined in pstat.h and consists of NPROC sized tables that will contain all the data of all processes at once. I then added to syscall.h two new numbers corresponding to the two new system calls, to user.h the numbers for the calls, and to usys.pl the two calls as entries.
 
-Μετά υλοποίησα τις δύο κλήσεις συστήματος στο sysproc.c ως εξής: 
-•Στην uint64 sys_priority(void): Ορίζω μία μεταβλητή int num που θα χρησιμοποιηθεί στην argint() για να πάρω το όρισμα του priority. Έπειτα ελέγχω αν τα priorities βρίσκονται εντός ορίων και αν δεν βρίσκονται τότε επιστρέφει αποτυχημένα με -1. Αλλιώς παίρνω το struct της διεργασίας που τρέχει εκείνη τη στιγμή με την myproc() και αφού κάνω aqcuire() το lock ώστε να μην μπορεί άλλη διεργασία από άλλη cpu να γράψει εκεί κάτι ταυτόχρονα, θέτω το priority της διεργασίας σε num. Έπειτα κάνω release() το lock και επιστρέφω 0 (επιτυχία).
-•Στην uint64 sys_getpinfo(void): Αρχικά ορίζω έναν uint64 pointer. Έπειτα παίρνω το struct της διεργασίας που τρέχει αυτή τη στιγμή με το myproc(), με την argaddr() παίρνω το όρισμα pstat που δίνεται από το ps.c στον pointer και κάνω kalloc() σε ενα *pstat struct. Χρησιμοποιώ την copyout() για error checking, και έπειτα διατρέχω όλες τις διεργασίες με ένα for loop. Μέσα στο for loop κάνω acquire() το lock για να μην μπορεί να γράψει κάποια άλλη διεργασία, ελέγχω αν η διεργασία είναι ενεργή ή έτοιμη να τρέξει, αντιγράφω όλα τα δεδομένα από το struct *p στο struct *pstat και εκτυπώνω τα αποτελέσματα. Έπειτα κάνω release() το lock και επιστρέφω 0 (επιτυχία).
+Then I implemented the two system calls in sysproc.c as follows: 
+-In uint64 sys_priority(void): I set an int num variable to be used in argint() to get the priority argument. I then check if the priorities are within bounds and if they are not then it returns -1 unsuccessfully. Otherwise I get the struct of the process currently running with myproc() and after making aqcuire() lock it so that no other process from another cpu can write something there at the same time, I set the priority of the process to num. I then release() the lock and return 0 (success).
+-In uint64 sys_getpinfo(void): first I set a uint64 pointer. Then I get the struct of the process currently running with myproc(), with argaddr() I get the pstat argument given by ps.c to the pointer and do kalloc() on a *pstat struct. I use copyout() for error checking, and then run all processes with a for loop. Inside the for loop I make acquire() lock so that no other process can write, check if the process is active or ready to run, copy all the data from the *p struct to the *pstat struct, and print the results. I then release() the lock and return 0 (success).
 
-Στη συνέχεια στο αρχείο ps.c απλά καλώ την getpinfo() όπου κάνει όλη την δουλειά και επίσης έχω προσθέσει στο Makefile στην γραμμή 136 το $U/_ps\ για να μπορώ να τρέξω το ps στον emulator. 
+Then in the ps.c file I just call getpinfo() where it does all the work and I also added $U/_ps\ to the Makefile on line 136 so I can run ps on the emulator. 
 
-Η υλοποίηση του priority_scheduler() πραγματοποιήθηκε ως εξής: 
-Ξεκινάω με τον ορισμό της μεταβλητής struct proc* p όπου θα χρησιμοποιήσω για το loop όπου διατρέχονται όλες οι διεργασίες.
-Μετά παίρνω στην μεταβλητή struct cpu* c το struct της συγκεκριμένης cpu με την mycpu() και αρχικοποιώ την διεργασία της cpu σε 0.
-Μέσα στο while(1): 
-•Κάνω enable τα interrupts με το intr_on().
-•Αρχικοποιώ το min σε 21 μιας και δεν μπορεί η διεργασία να έχει χαμηλότερη προτεραιότητα από 20.
-•Αρχικοποιώ την νέα διεργασία που θα τρέξει σε 0.
-•Ξεκινάω με το for loop να διατρέχω όλες τις διεργασίες που είναι έτοιμες να τρέξουν εκείνη την στιγμή και εκείνες που τρέχουν ήδη στην περίπτωση large εργασιών που έχουν υποστεί preempt, και ελέγχω αν η προτεραιότητα τους είναι μεγαλύτερη από τις άλλες. Όταν βρεθεί τη μεγαλύτερη, αυτή θα τρέξει.
-•Αν τώρα έχει βρεθεί διεργασία με μεγαλύτερη προτεραιότητα, τότε ορίζω το state της σαν RUNNING, την τοποθετώ στην cpu, κάνω swtch() το context, και την αρχικοποιώ πάλι σε 0 γιατί σταμάτησε να τρέχει.
-•Αν δεν έχει βρεθεί, πάει στην επόμενη.
-Αν δύο διεργασίες έχουν ίδια προτεραιότητα στην ουσία θα επιλεγούν με πολιτική round-robin.
+The implementation of priority_scheduler() was implemented as follows: 
+I start by defining the struct proc* p variable where I will use for the loop where all the processes run.
+Then I take in the struct cpu* c variable the struct of the given cpu with mycpu() and initialize the cpu process to 0.
+Inside while(1): 
+-I enable the interrupts with intr_on().
+-I initialize min to 21 since the process cannot have a lower priority than 20.
+-I initialize the new process to run to 0.
+-I start with the for loop to loop through all the processes that are ready to run at that moment and those already running in the case of large preempted tasks, and check if their priority is higher than the others. When the highest is found, it will run.
+-If a process with higher priority is now found, then I set its state as RUNNING, put it on cpu, swtch() the context, and initialize it back to 0 because it stopped running.
+-If it's not found, it goes to the next one.
+If two processes have the same priority in essence they will be selected by a round-robin policy.
 
-Τα usertests βγαίνουν ολα ΟΚ εκτός από τα killstatus (όπου κολλούσε εκεί χωρίς να εμφανίζει τίποτα), preempt (το ίδιο με το killstatus) και reparent (που επέστρεφε fail) όπου τα έκανα comment out στο usertests και απλά επιστρέφουν 0, ώστε να ελέγξχω και τα υπόλοιπα.
-Στο priotest οι διεργασίες φαίνεται να εκτελούνται με τη σωστή σειρά.
+The usertests all come out OK except for killstatus (where it stuck there without showing anything), preempt (same as killstatus) and reparent (which returned fail) where I commented them out in usertests and they just return 0 so I can check the rest.
+In priotest the processes seem to be executed in the correct order.
